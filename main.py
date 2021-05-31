@@ -31,7 +31,6 @@ image_transforms = {
 dataset = 'D:/PyCharm/ResNet/ver_data'  # 数据集路径
 train_directory = os.path.join(dataset, 'train')
 test_directory = os.path.join(dataset, 'test')
-
 batch_size = 32
 num_classes = 2
 
@@ -57,15 +56,13 @@ fc_inputs = resnet18.fc.in_features
 resnet18.fc = nn.Sequential(  # 更改网络结构，适应我们自己的分类需要
     nn.Linear(fc_inputs, 256),
     nn.ReLU(),
-    nn.Dropout(0.4),
-    nn.Linear(256, 2),
-    nn.LogSoftmax(dim=1)
+    nn.Linear(256, 2)
 )
 
 resnet18 = resnet18.to('cuda:0')
 
 Loss_ = nn.CrossEntropyLoss()  # 定义交叉熵损失
-optimizer_ = optim.Adam(resnet18.parameters())  # 定义Adam优化器
+optimizer_ = optim.Adam(resnet18.parameters(), lr=1e-4)  # 定义Adam优化器
 
 
 def train(model, Loss, optimizer, epoches=50):  # 训练函数
@@ -87,7 +84,6 @@ def train(model, Loss, optimizer, epoches=50):  # 训练函数
         for i, (inputs, labels) in enumerate(train_data):  # 训练部分
             inputs = inputs.to(device)
             labels = labels.to(device)
-
             optimizer.zero_grad()
 
             outputs = model(inputs)  # 前向传播
@@ -140,16 +136,8 @@ def train(model, Loss, optimizer, epoches=50):  # 训练函数
             ))
         print("Best Accuracy for test : {:.4f} at epoch {:03d}".format(best_acc, best_epoch))
 
-        # torch.save(model, 'models/' + dataset + '_model_' + str(epoch + 1) + '.pt')
+        torch.save(model, 'D:/PyCharm/ResNet/models_2class/' + '_model_' + str(epoch + 1) + '.pt')
     return model
 
 
-def valid(x, y, net_path, criterion):  # 验证函数
-    net = torch.load(net_path)
-    y_pred = net(x)
-    loss = criterion(y_pred, y)
-    print("验证完成，损失为{}", format(loss.item()))
-    return 0
-
-
-train(resnet18, Loss_, optimizer_, 100)
+train(resnet18, Loss_, optimizer_, 50)
