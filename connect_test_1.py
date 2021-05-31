@@ -3,29 +3,15 @@ import torch
 import torch.nn as nn
 import numpy as np
 import argparse
-from tqdm import tqdm
+
 import time
 from skimage.transform import resize
-from torchvision import models, datasets
-from cut8 import cut_u
+
 from U_Net import U_Net
 from firststage_Dataset import firststage_Dataset
 import Process_image_1
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
-# resnet18 = models.resnet18(pretrained=False)  # 加载ResNet18的预训练模型
-#
-#
-# fc_inputs = resnet18.fc.in_features
-# resnet18.fc = nn.Sequential(  # 更改网络结构，适应我们自己的分类需要
-#     nn.Linear(fc_inputs, 256),
-#     nn.ReLU(),
-#     nn.Dropout(0.4),
-#     nn.Linear(256, 5),
-# )
-#
-# resnet18 = resnet18.to('cuda:0')
-
 
 def connect_test(config):
     U_net = U_Net()
@@ -73,7 +59,7 @@ def connect_test(config):
     y = y.numpy()
     print("imgs:")  # imgs:
     print(type(imgs))  # <class 'numpy.ndarray'>
-    print(imgs.shape)  # (51, 256, 256)
+    print(imgs.shape)  # (51, 512, 512)
 
     return x, y, imgs
 
@@ -89,31 +75,6 @@ transform = transforms.Compose([
 Loss_ = nn.CrossEntropyLoss()
 
 
-def valid(net, valid_data):  # 验证函数
-    test_loss = 0.0
-    test_acc = 0.0
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    net.eval()
-    for j, (inputs, labels) in enumerate(valid_data):
-        inputs = inputs.to(device)
-        labels = labels.to(device)
-
-        outputs = net(inputs)
-        loss = Loss_(outputs, labels)
-        test_loss += loss.item() * inputs.size(0)
-        ret, predictions = torch.max(outputs.data, 1)
-        correct_counts = predictions.eq(labels.data.view_as(predictions))
-        acc = torch.mean(correct_counts.type(torch.FloatTensor))
-        test_acc += acc.item() * inputs.size(0)
-    test_data_size = len(valid_data)
-
-    avg_test_loss = test_loss / test_data_size
-    avg_test_acc = test_acc / test_data_size
-    print("验证完成，损失为:", avg_test_loss, "准确率为：", avg_test_acc)
-    return 0
-
-
 if __name__ == '__main__':
     # 载入参数
     parser = argparse.ArgumentParser()
@@ -124,13 +85,6 @@ if __name__ == '__main__':
     parser.add_argument('--pretrain_dir', type=str, default="./best.pth")  # 加载训练模型的路径?
     config = parser.parse_args()
 
-    x, y, imgs = connect_test(config)  # 获取256,256大小的图片下对应的预测坐标以及图片
-    # Process_image_1.process_test(imgs, x, y)
-    valid_path = 'C:/Users/86180/PycharmProjects/ResNet/disc_data/valid'  # 更改路径，以及选择disc/ver
-    valid_data = datasets.ImageFolder(root=valid_path, transform=transform)
-    valid_data = DataLoader(valid_data, batch_size=32,
-                            shuffle=False)
-    resnet18 = torch.load('_model_38.pt')
-    print(resnet18)
-    # resnet18.load_state_dict(net_state)
-    valid(resnet18, valid_data)
+    x, y, imgs = connect_test(config)  # 获取预测坐标以及对应图片
+    Process_image_1.process_test(imgs, x, y)
+
